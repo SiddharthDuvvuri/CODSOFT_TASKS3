@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Khata — My Expense Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:       #ECE8DE;
+    --paper-deep:  #E2DDCF;
+    --card:        #FBFAF6;
+    --ink:         #1C2A2A;
+    --ink-soft:    #55605C;
+    --ink-faint:   #8B9490;
+    --hairline:    #CFC9B8;
+    --hairline-strong: #B9B29C;
+    --green:       #1F7A5C;
+    --green-soft:  #E4EFE9;
+    --rust:        #AE4A2E;
+    --rust-soft:   #F3E5DF;
+    --gold:        #B98A22;
+    --gold-soft:   #F1E7CE;
+    --shadow: 0 1px 2px rgba(28,42,42,0.04), 0 8px 24px -12px rgba(28,42,42,0.18);
+    --radius: 3px;
+  }
+
+  *{ box-sizing: border-box; }
+  html{ -webkit-font-smoothing: antialiased; }
+  body{
+    margin:0;
+    background:
+      radial-gradient(1200px 600px at 8% -10%, #F3EFE4 0%, transparent 60%),
+      var(--paper);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    line-height: 1.45;
+    min-height: 100vh;
+  }
+
+  ::selection{ background: var(--gold-soft); }
+
+  button{ font-family: inherit; }
+  input, select{ font-family: inherit; }
+
+  .wrap{
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+  }
+
+  /* ---------- Header ---------- */
+  .masthead{
+    display:flex;
+    align-items:flex-end;
+    justify-content: space-between;
+    gap: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--hairline-strong);
+    margin-bottom: 32px;
+  }
+  .brand{
+    display:flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .brand-mark{
+    font-family:'Fraunces', serif;
+    font-weight: 600;
+    font-size: 30px;
+    letter-spacing: -0.01em;
+  }
+  .brand-tag{
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+  .today{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    color: var(--ink-faint);
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  /* ---------- Balance hero (passbook stub) ---------- */
+  .stub{
+    position: relative;
+    background: var(--card);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 30px 32px;
+    margin-bottom: 28px;
+    display:grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: 28px;
+    overflow: hidden;
+  }
+  .stub::before{
+    content:"";
+    position:absolute;
+    left:0; top:0; bottom:0;
+    width: 5px;
+    background: repeating-linear-gradient(
+      to bottom, var(--gold) 0 10px, transparent 10px 18px
+    );
+  }
+  .stub-main .label{
+    font-size: 12px;
+    text-transform: none;
+    letter-spacing: 0.02em;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+  }
+  .stub-main .balance{
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 44px;
+    letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
+  }
+  .balance.neg{ color: var(--rust); }
+  .balance.pos{ color: var(--ink); }
+
+  .stub-stat{
+    text-align: right;
+    padding-left: 24px;
+    border-left: 1px solid var(--hairline);
+  }
+  .stub-stat .label{
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+  }
+  .stub-stat .amount{
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 500;
+    font-size: 20px;
+    font-variant-numeric: tabular-nums;
+  }
+  .stub-stat.income .amount{ color: var(--green); }
+  .stub-stat.expense .amount{ color: var(--rust); }
+
+  @media (max-width: 640px){
+    .stub{ grid-template-columns: 1fr; gap: 16px; }
+    .stub-stat{ border-left:none; border-top:1px solid var(--hairline); padding-left:0; padding-top:14px; text-align:left; display:flex; justify-content:space-between; align-items:center;}
+  }
+
+  /* ---------- Controls row ---------- */
+  .controls{
+    display:flex;
+    align-items:center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+  }
+  .section-title{
+    font-family:'Fraunces', serif;
+    font-size: 19px;
+    font-weight: 600;
+  }
+  .btn{
+    appearance:none;
+    border:1px solid var(--ink);
+    background: var(--ink);
+    color: var(--paper);
+    padding: 10px 18px;
+    border-radius: var(--radius);
+    font-size: 14px;
+    font-weight: 600;
+    cursor:pointer;
+    transition: transform .12s ease, box-shadow .12s ease, background .15s ease;
+  }
+  .btn:hover{ background:#0F1918; }
+  .btn:active{ transform: scale(0.97); }
+  .btn.ghost{
+    background: transparent;
+    color: var(--ink);
+    border-color: var(--hairline-strong);
+  }
+  .btn.ghost:hover{ background: var(--paper-deep); }
+  .btn.small{ padding: 7px 12px; font-size: 12.5px; }
+
+  /* ---------- Add/edit panel ---------- */
+  .panel{
+    background: var(--card);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    margin-bottom: 28px;
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    transform: translateY(-6px);
+    transition: max-height .35s cubic-bezier(.4,0,.2,1), opacity .25s ease, transform .3s ease, margin .3s ease;
+  }
+  .panel.open{
+    max-height: 480px;
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .panel-inner{ padding: 24px; }
+  .panel-head{
+    display:flex; justify-content:space-between; align-items:center;
+    margin-bottom: 18px;
+  }
+  .panel-head h3{
+    font-family:'Fraunces', serif;
+    margin:0; font-size:17px; font-weight:600;
+  }
+  .close-x{
+    background:none; border:none; cursor:pointer;
+    color: var(--ink-faint); font-size: 18px; line-height:1;
+    padding:4px;
+  }
+  .close-x:hover{ color: var(--ink); }
+
+  .type-toggle{
+    display:inline-flex;
+    border: 1px solid var(--hairline-strong);
+    border-radius: 999px;
+    padding: 3px;
+    margin-bottom: 18px;
+    background: var(--paper-deep);
+  }
+  .type-toggle button{
+    border:none;
+    background:transparent;
+    padding: 8px 20px;
+    border-radius: 999px;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor:pointer;
+    color: var(--ink-soft);
+    transition: background .2s ease, color .2s ease;
+  }
+  .type-toggle button.active.expense{ background: var(--rust); color:#fff; }
+  .type-toggle button.active.income{ background: var(--green); color:#fff; }
+
+  .form-grid{
+    display:grid;
+    grid-template-columns: 1.2fr 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+  .form-grid .full{ grid-column: 1 / -1; }
+  @media (max-width: 640px){ .form-grid{ grid-template-columns: 1fr 1fr; } }
+
+  .field label{
+    display:block;
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+  }
+  .field input, .field select{
+    width:100%;
+    padding: 10px 12px;
+    border: 1px solid var(--hairline-strong);
+    border-radius: var(--radius);
+    background: #fff;
+    font-size: 14px;
+    color: var(--ink);
+    outline: none;
+    transition: border-color .15s ease, box-shadow .15s ease;
+  }
+  .field input:focus, .field select:focus{
+    border-color: var(--ink);
+    box-shadow: 0 0 0 3px rgba(28,42,42,0.08);
+  }
+  .amount-field{ position:relative; }
+  .amount-field .cur{
+    position:absolute; left:12px; top:50%; transform:translateY(-50%);
+    color: var(--ink-faint); font-family:'IBM Plex Mono', monospace; font-size:14px;
+    pointer-events:none;
+  }
+  .amount-field input{ padding-left: 26px; font-family:'IBM Plex Mono', monospace; }
+
+  .panel-actions{ display:flex; gap: 10px; justify-content:flex-end; }
+  .err{
+    font-size: 12.5px; color: var(--rust); margin: -8px 0 12px; display:none;
+  }
+  .err.show{ display:block; }
+
+  /* ---------- Filter chips ---------- */
+  .chips{
+    display:flex; gap:8px; flex-wrap:wrap;
+    margin-bottom: 16px;
+  }
+  .chip{
+    border:1px solid var(--hairline-strong);
+    background: var(--card);
+    color: var(--ink-soft);
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 500;
+    cursor:pointer;
+    transition: all .15s ease;
+    display:flex; align-items:center; gap:6px;
+  }
+  .chip .dot{ width:7px; height:7px; border-radius:50%; background: var(--ink-faint); }
+  .chip:hover{ border-color: var(--ink); color: var(--ink); }
+  .chip.active{ background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  .chip.active .dot{ background: var(--paper); }
+
+  /* ---------- Ledger table ---------- */
+  .ledger{
+    background: var(--card);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    margin-bottom: 32px;
+  }
+  .ledger-head{
+    display:grid;
+    grid-template-columns: 90px 1fr 130px 120px 76px;
+    gap: 10px;
+    padding: 12px 20px;
+    font-size: 11.5px;
+    color: var(--ink-faint);
+    border-bottom: 1px solid var(--hairline);
+    background: var(--paper-deep);
+  }
+  .row{
+    display:grid;
+    grid-template-columns: 90px 1fr 130px 120px 76px;
+    gap: 10px;
+    align-items:center;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--hairline);
+    animation: slideIn .32s cubic-bezier(.4,0,.2,1);
+  }
+  .row:last-child{ border-bottom:none; }
+  .row.removing{
+    animation: slideOut .28s ease forwards;
+  }
+  @keyframes slideIn{
+    from{ opacity:0; transform: translateY(-8px); }
+    to{ opacity:1; transform: translateY(0); }
+  }
+  @keyframes slideOut{
+    to{ opacity:0; transform: translateX(12px) scale(0.98); max-height:0; padding-top:0; padding-bottom:0; }
+  }
+
+  .row .date{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--ink-soft);
+  }
+  .row .desc{
+    display:flex; flex-direction:column; gap:3px; min-width:0;
+  }
+  .row .desc .title{
+    font-size: 14px; font-weight:500; color: var(--ink);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .row .desc .cat{
+    font-size: 11.5px; color: var(--ink-faint);
+    display:flex; align-items:center; gap:5px;
+  }
+  .row .desc .cat .dot{ width:6px; height:6px; border-radius:50%; }
+
+  .row .amount{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 14.5px;
+    font-weight: 500;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  .row .amount.income{ color: var(--green); }
+  .row .amount.expense{ color: var(--rust); }
+
+  .row .actions{
+    display:flex; gap:4px; justify-content:flex-end;
+    opacity: 0;
+    transition: opacity .15s ease;
+  }
+  .row:hover .actions{ opacity: 1; }
+  .icon-btn{
+    border:none; background:transparent; cursor:pointer;
+    width:26px; height:26px; border-radius: 4px;
+    display:flex; align-items:center; justify-content:center;
+    color: var(--ink-faint);
+    transition: background .15s ease, color .15s ease;
+  }
+  .icon-btn:hover{ background: var(--paper-deep); color: var(--ink); }
+  .icon-btn.del:hover{ color: var(--rust); }
+
+  .empty{
+    padding: 48px 24px;
+    text-align:center;
+    color: var(--ink-faint);
+  }
+  .empty .glyph{ font-size: 28px; margin-bottom:10px; }
+  .empty .msg{ font-family:'Fraunces', serif; font-size:16px; color: var(--ink-soft); margin-bottom:4px; }
+  .empty .sub{ font-size: 13px; }
+
+  @media (max-width: 700px){
+    .ledger-head{ display:none; }
+    .row{
+      grid-template-columns: 1fr auto;
+      grid-template-areas: "desc amount" "date actions";
+      row-gap: 6px;
+    }
+    .row .desc{ grid-area: desc; }
+    .row .amount{ grid-area: amount; }
+    .row .date{ grid-area: date; }
+    .row .actions{ grid-area: actions; opacity:1; }
+  }
+
+  /* ---------- Category breakdown ---------- */
+  .breakdown{
+    background: var(--card);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 24px 26px 22px;
+  }
+  .breakdown h3{
+    font-family:'Fraunces', serif;
+    font-size: 17px; font-weight:600; margin: 0 0 16px;
+  }
+  .bd-row{
+    display:grid;
+    grid-template-columns: 120px 1fr 74px;
+    align-items:center;
+    gap: 14px;
+    padding: 8px 0;
+  }
+  .bd-row .name{ font-size: 13px; color: var(--ink-soft); }
+  .bd-track{
+    height: 8px;
+    background: var(--paper-deep);
+    border-radius: 999px;
+    overflow:hidden;
+  }
+  .bd-fill{
+    height:100%;
+    border-radius:999px;
+    width:0;
+    transition: width .6s cubic-bezier(.4,0,.2,1);
+  }
+  .bd-row .val{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    text-align:right;
+    color: var(--ink-soft);
+  }
+
+  footer{
+    text-align:center;
+    color: var(--ink-faint);
+    font-size: 12px;
+    margin-top: 36px;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <div class="masthead">
+    <div class="brand">
+      <div class="brand-mark">Khata</div>
+      <div class="brand-tag">Your own little hisaab-kitaab — what comes in, what goes out.</div>
+    </div>
+    <div class="today" id="todayDate"></div>
+  </div>
+
+  <div class="stub">
+    <div class="stub-main">
+      <div class="label">Current balance</div>
+      <div class="balance pos" id="balanceDisplay">$0.00</div>
+    </div>
+    <div class="stub-stat income">
+      <div class="label">Income</div>
+      <div class="amount" id="incomeDisplay">$0.00</div>
+    </div>
+    <div class="stub-stat expense">
+      <div class="label">Expenses</div>
+      <div class="amount" id="expenseDisplay">$0.00</div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="section-title">Transactions</div>
+    <button class="btn" id="toggleAddBtn">+ Add transaction</button>
+  </div>
+
+  <div class="panel" id="panel">
+    <div class="panel-inner">
+      <div class="panel-head">
+        <h3 id="panelTitle">New transaction</h3>
+        <button class="close-x" id="closePanel">✕</button>
+      </div>
+
+      <div class="type-toggle" id="typeToggle">
+        <button type="button" class="active expense" data-type="expense">Expense</button>
+        <button type="button" data-type="income">Income</button>
+      </div>
+
+      <form id="txForm">
+        <input type="hidden" id="editId">
+        <div class="form-grid">
+          <div class="field full">
+            <label for="descInput">Description</label>
+            <input type="text" id="descInput" placeholder="e.g. Groceries at market" required>
+          </div>
+          <div class="field amount-field">
+            <label for="amountInput">Amount</label>
+            <span class="cur">₹</span>
+            <input type="number" id="amountInput" step="0.01" min="0.01" placeholder="0.00" required>
+          </div>
+          <div class="field">
+            <label for="categoryInput">Category</label>
+            <select id="categoryInput"></select>
+          </div>
+          <div class="field">
+            <label for="dateInput">Date</label>
+            <input type="date" id="dateInput" required>
+          </div>
+        </div>
+        <div class="err" id="formErr">Please fill in every field with a valid amount.</div>
+        <div class="panel-actions">
+          <button type="button" class="btn ghost small" id="cancelBtn">Cancel</button>
+          <button type="submit" class="btn small" id="submitBtn">Save transaction</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="chips" id="filterChips"></div>
+
+  <div class="ledger">
+    <div class="ledger-head">
+      <div>Date</div>
+      <div>Description</div>
+      <div style="text-align:right">Category</div>
+      <div style="text-align:right">Amount</div>
+      <div></div>
+    </div>
+    <div id="rowsContainer"></div>
+  </div>
+
+  <div class="breakdown">
+    <h3>Where expenses go</h3>
+    <div id="breakdownContainer"></div>
+  </div>
+
+  <footer>Saved safely on this device — just for you, nowhere else</footer>
+
+</div>
+
+<script>
+(function(){
+  const STORAGE_KEY = 'ledger_transactions_v1';
+
+  const CATEGORIES = {
+    expense: [
+      { id: 'food', label: 'Food & Dining', color: '#AE4A2E' },
+      { id: 'groceries', label: 'Groceries', color: '#7A8C4E' },
+      { id: 'transport', label: 'Transport & Fuel', color: '#B98A22' },
+      { id: 'rent', label: 'Rent & Housing', color: '#5B6E8C' },
+      { id: 'bills', label: 'Bills & Recharge', color: '#6E7F6A' },
+      { id: 'emi', label: 'EMI & Loans', color: '#8B5A3C' },
+      { id: 'health', label: 'Health', color: '#3E8C7E' },
+      { id: 'shopping', label: 'Shopping', color: '#C06A8F' },
+      { id: 'entertainment', label: 'Entertainment', color: '#8A5A9E' },
+      { id: 'travel', label: 'Travel', color: '#4E7C8C' },
+      { id: 'festivals', label: 'Festivals & Gifts', color: '#C9932E' },
+      { id: 'education', label: 'Education', color: '#5C6E9E' },
+      { id: 'other_exp', label: 'Other', color: '#8B9490' },
+    ],
+    income: [
+      { id: 'salary', label: 'Salary', color: '#1F7A5C' },
+      { id: 'freelance', label: 'Freelance / Business', color: '#3E8C7E' },
+      { id: 'investment', label: 'Investments', color: '#5B6E8C' },
+      { id: 'rent_income', label: 'Rent Received', color: '#7A8C4E' },
+      { id: 'gift', label: 'Gifts', color: '#B98A22' },
+      { id: 'other_inc', label: 'Other', color: '#8B9490' },
+    ]
+  };
+
+  function allCategories(){ return [...CATEGORIES.expense, ...CATEGORIES.income]; }
+  function catMeta(id){ return allCategories().find(c => c.id === id) || { label: id, color: '#8B9490' }; }
+
+  let transactions = load();
+  let currentType = 'expense';
+  let activeFilter = 'all';
+  let editingId = null;
+
+  // ---------- Persistence ----------
+  function load(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    }catch(e){ return []; }
+  }
+  function save(){
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(transactions));
+  }
+
+  // ---------- Helpers ----------
+  const fmt = new Intl.NumberFormat('en-IN', { style:'currency', currency:'INR', maximumFractionDigits: 2 });
+  function fmtDate(iso){
+    const d = new Date(iso + 'T00:00:00');
+    return d.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+  }
+  function uid(){ return 't_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+  // ---------- DOM refs ----------
+  const panel = document.getElementById('panel');
+  const toggleAddBtn = document.getElementById('toggleAddBtn');
+  const closePanel = document.getElementById('closePanel');
+  const cancelBtn = document.getElementById('cancelBtn');
+  const txForm = document.getElementById('txForm');
+  const typeToggle = document.getElementById('typeToggle');
+  const categoryInput = document.getElementById('categoryInput');
+  const descInput = document.getElementById('descInput');
+  const amountInput = document.getElementById('amountInput');
+  const dateInput = document.getElementById('dateInput');
+  const editId = document.getElementById('editId');
+  const panelTitle = document.getElementById('panelTitle');
+  const submitBtn = document.getElementById('submitBtn');
+  const formErr = document.getElementById('formErr');
+  const rowsContainer = document.getElementById('rowsContainer');
+  const filterChips = document.getElementById('filterChips');
+  const breakdownContainer = document.getElementById('breakdownContainer');
+  const balanceDisplay = document.getElementById('balanceDisplay');
+  const incomeDisplay = document.getElementById('incomeDisplay');
+  const expenseDisplay = document.getElementById('expenseDisplay');
+  const todayDate = document.getElementById('todayDate');
+
+  todayDate.textContent = new Date().toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+  dateInput.valueAsDate = new Date();
+
+  // ---------- Panel open/close ----------
+  function openPanel(){ panel.classList.add('open'); descInput.focus(); }
+  function shutPanel(){
+    panel.classList.remove('open');
+    txForm.reset();
+    dateInput.valueAsDate = new Date();
+    editingId = null;
+    editId.value = '';
+    setType('expense');
+    panelTitle.textContent = 'New transaction';
+    submitBtn.textContent = 'Save transaction';
+    formErr.classList.remove('show');
+  }
+  toggleAddBtn.addEventListener('click', () => {
+    if(panel.classList.contains('open') && !editingId){ shutPanel(); } else { openPanel(); }
+  });
+  closePanel.addEventListener('click', shutPanel);
+  cancelBtn.addEventListener('click', shutPanel);
+
+  // ---------- Type toggle ----------
+  function setType(type){
+    currentType = type;
+    [...typeToggle.querySelectorAll('button')].forEach(b => {
+      b.classList.toggle('active', b.dataset.type === type);
+    });
+    populateCategories();
+  }
+  typeToggle.addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if(!btn) return;
+    setType(btn.dataset.type);
+  });
+
+  function populateCategories(){
+    categoryInput.innerHTML = CATEGORIES[currentType]
+      .map(c => `<option value="${c.id}">${c.label}</option>`).join('');
+  }
+  populateCategories();
+
+  // ---------- Form submit ----------
+  txForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const amount = parseFloat(amountInput.value);
+    const desc = descInput.value.trim();
+    const date = dateInput.value;
+    const category = categoryInput.value;
+
+    if(!desc || !date || isNaN(amount) || amount <= 0){
+      formErr.classList.add('show');
+      return;
+    }
+    formErr.classList.remove('show');
+
+    if(editingId){
+      const tx = transactions.find(t => t.id === editingId);
+      if(tx){
+        Object.assign(tx, { type: currentType, amount, category, description: desc, date });
+      }
+    } else {
+      transactions.push({
+        id: uid(),
+        type: currentType,
+        amount,
+        category,
+        description: desc,
+        date
+      });
+    }
+    save();
+    renderAll();
+    shutPanel();
+  });
+
+  // ---------- Edit / Delete ----------
+  function startEdit(id){
+    const tx = transactions.find(t => t.id === id);
+    if(!tx) return;
+    editingId = id;
+    editId.value = id;
+    setType(tx.type);
+    descInput.value = tx.description;
+    amountInput.value = tx.amount;
+    dateInput.value = tx.date;
+    populateCategories();
+    categoryInput.value = tx.category;
+    panelTitle.textContent = 'Edit transaction';
+    submitBtn.textContent = 'Update transaction';
+    openPanel();
+  }
+
+  function deleteTx(id){
+    const rowEl = document.querySelector(`[data-row-id="${id}"]`);
+    if(rowEl){
+      rowEl.classList.add('removing');
+      rowEl.addEventListener('animationend', () => {
+        transactions = transactions.filter(t => t.id !== id);
+        save();
+        renderAll();
+      }, { once:true });
+    } else {
+      transactions = transactions.filter(t => t.id !== id);
+      save();
+      renderAll();
+    }
+  }
+
+  // ---------- Filters ----------
+  function renderChips(){
+    const usedExpenseCats = [...new Set(transactions.filter(t => t.type === 'expense').map(t => t.category))];
+    const chips = [{ id:'all', label:'All transactions', color:'#1C2A2A' },
+      ...usedExpenseCats.map(id => catMeta(id))];
+
+    filterChips.innerHTML = chips.map(c => `
+      <button class="chip ${activeFilter === c.id ? 'active' : ''}" data-filter="${c.id}">
+        <span class="dot" style="background:${activeFilter === c.id ? '' : c.color}"></span>${c.label}
+      </button>
+    `).join('');
+
+    filterChips.querySelectorAll('.chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        activeFilter = chip.dataset.filter;
+        renderAll();
+      });
+    });
+  }
+
+  // ---------- Rows ----------
+  function renderRows(){
+    let list = [...transactions].sort((a,b) => new Date(b.date) - new Date(a.date));
+    if(activeFilter !== 'all'){
+      list = list.filter(t => t.category === activeFilter);
+    }
+
+    if(list.length === 0){
+      rowsContainer.innerHTML = `
+        <div class="empty">
+          <div class="glyph">✎</div>
+          <div class="msg">No transactions yet</div>
+          <div class="sub">${activeFilter === 'all' ? 'Add your first income or expense above.' : 'None in this category — try a different filter.'}</div>
+        </div>`;
+      return;
+    }
+
+    rowsContainer.innerHTML = list.map(t => {
+      const cat = catMeta(t.category);
+      const sign = t.type === 'income' ? '+' : '−';
+      return `
+        <div class="row" data-row-id="${t.id}">
+          <div class="date">${fmtDate(t.date)}</div>
+          <div class="desc">
+            <div class="title">${escapeHtml(t.description)}</div>
+            <div class="cat"><span class="dot" style="background:${cat.color}"></span>${cat.label}</div>
+          </div>
+          <div class="amount ${t.type}">${sign}${fmt.format(t.amount)}</div>
+          <div></div>
+          <div class="actions">
+            <button class="icon-btn edit" title="Edit" data-id="${t.id}">✎</button>
+            <button class="icon-btn del" title="Delete" data-id="${t.id}">✕</button>
+          </div>
+        </div>`;
+    }).join('');
+
+    rowsContainer.querySelectorAll('.icon-btn.edit').forEach(b => b.addEventListener('click', () => startEdit(b.dataset.id)));
+    rowsContainer.querySelectorAll('.icon-btn.del').forEach(b => b.addEventListener('click', () => deleteTx(b.dataset.id)));
+  }
+
+  function escapeHtml(str){
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  // ---------- Summary ----------
+  function animateNumber(el, from, to, prefix){
+    const duration = 500;
+    const start = performance.now();
+    function step(now){
+      const p = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - p, 3);
+      const val = from + (to - from) * eased;
+      el.textContent = fmt.format(val);
+      if(p < 1) requestAnimationFrame(step);
+      else el.textContent = fmt.format(to);
+    }
+    requestAnimationFrame(step);
+  }
+
+  let prevIncome = 0, prevExpense = 0, prevBalance = 0;
+
+  function renderSummary(){
+    const income = transactions.filter(t => t.type === 'income').reduce((s,t) => s + t.amount, 0);
+    const expense = transactions.filter(t => t.type === 'expense').reduce((s,t) => s + t.amount, 0);
+    const balance = income - expense;
+
+    animateNumber(incomeDisplay, prevIncome, income);
+    animateNumber(expenseDisplay, prevExpense, expense);
+    animateNumber(balanceDisplay, prevBalance, balance);
+    balanceDisplay.classList.toggle('neg', balance < 0);
+    balanceDisplay.classList.toggle('pos', balance >= 0);
+
+    prevIncome = income; prevExpense = expense; prevBalance = balance;
+  }
+
+  // ---------- Breakdown ----------
+  function renderBreakdown(){
+    const expenses = transactions.filter(t => t.type === 'expense');
+    const total = expenses.reduce((s,t) => s + t.amount, 0);
+
+    if(expenses.length === 0){
+      breakdownContainer.innerHTML = `<div class="empty" style="padding:20px 0;">
+        <div class="sub">Expense categories will appear here once you add some.</div>
+      </div>`;
+      return;
+    }
+
+    const byCat = {};
+    expenses.forEach(t => { byCat[t.category] = (byCat[t.category] || 0) + t.amount; });
+
+    const rows = Object.entries(byCat)
+      .sort((a,b) => b[1] - a[1])
+      .map(([id, amt]) => {
+        const cat = catMeta(id);
+        const pct = total > 0 ? (amt / total) * 100 : 0;
+        return { cat, amt, pct };
+      });
+
+    breakdownContainer.innerHTML = rows.map(r => `
+      <div class="bd-row">
+        <div class="name">${r.cat.label}</div>
+        <div class="bd-track"><div class="bd-fill" style="background:${r.cat.color}; width:0%" data-w="${r.pct}"></div></div>
+        <div class="val">${fmt.format(r.amt)}</div>
+      </div>
+    `).join('');
+
+    requestAnimationFrame(() => {
+      breakdownContainer.querySelectorAll('.bd-fill').forEach(el => {
+        el.style.width = el.dataset.w + '%';
+      });
+    });
+  }
+
+  // ---------- Render all ----------
+  function renderAll(){
+    renderChips();
+    renderRows();
+    renderSummary();
+    renderBreakdown();
+  }
+
+  renderAll();
+})();
+</script>
+</body>
+</html>
